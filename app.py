@@ -1020,6 +1020,30 @@ body[data-page="home"] .filter-row input,
 }
 
 
+
+        /* ===================================================
+           PERSONALIZATION POPUP
+        =================================================== */
+        .personalization-overlay{position:fixed;inset:0;background:rgba(11,31,58,.58);display:none;align-items:center;justify-content:center;padding:20px;z-index:2000;backdrop-filter:blur(3px)}
+        .personalization-overlay.show{display:flex}
+        .personalization-modal{width:min(680px,100%);max-height:min(760px,calc(100vh - 40px));overflow:auto;background:#fff;border-radius:22px;box-shadow:0 28px 80px rgba(11,31,58,.28);padding:28px;position:relative}
+        .personalization-close{position:absolute;right:16px;top:14px;width:36px;height:36px;border:0;background:transparent;color:var(--muted);font-size:25px;cursor:pointer;border-radius:50%}
+        .personalization-close:hover{background:#f1f5f9;color:var(--text)}
+        .personalization-kicker{color:var(--saffron);font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+        .personalization-modal h2{margin:0 38px 8px 0;color:var(--navy);font-size:28px;line-height:1.15}
+        .personalization-modal>p{margin:0 0 22px;color:var(--muted);line-height:1.55}
+        .personalization-section{margin-top:22px}
+        .personalization-section h3{margin:0 0 10px;font-size:15px;color:var(--text)}
+        .preference-chips{display:flex;flex-wrap:wrap;gap:9px}
+        .preference-chip{border:1px solid var(--border);background:#fff;color:var(--text);padding:9px 13px;border-radius:999px;font:inherit;font-size:13px;font-weight:650;cursor:pointer;transition:.18s ease}
+        .preference-chip:hover{border-color:var(--saffron)}
+        .preference-chip.selected{background:var(--navy);border-color:var(--navy);color:#fff;box-shadow:0 4px 12px rgba(11,31,58,.16)}
+        .personalization-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:28px;padding-top:18px;border-top:1px solid var(--border)}
+        .personalization-later{border:0;background:transparent;color:var(--muted);font:inherit;font-weight:700;padding:10px;cursor:pointer}
+        .personalization-save{border:0;background:var(--saffron);color:#fff;border-radius:10px;padding:12px 18px;font:inherit;font-weight:800;cursor:pointer;box-shadow:0 8px 18px rgba(245,158,11,.22)}
+        .personalization-save:hover{filter:brightness(.96)}
+        @media(max-width:700px){.personalization-overlay{align-items:flex-end;padding:0}.personalization-modal{width:100%;max-height:88vh;border-radius:22px 22px 0 0;padding:24px 18px 18px}.personalization-modal h2{font-size:24px}.preference-chip{font-size:12px;padding:8px 11px}.personalization-actions{position:sticky;bottom:-18px;background:#fff;padding-bottom:18px;margin-left:-18px;margin-right:-18px;padding-left:18px;padding-right:18px}.personalization-save{flex:1}}
+
         @media(max-width:700px){
             .brand{gap:8px}
             .logo{width:48px;height:48px;flex-basis:48px}
@@ -1554,6 +1578,28 @@ body[data-page="home"] .filter-row input,
 </footer>
 
 
+<!-- Smart personalization popup: hidden until meaningful browsing -->
+<div class="personalization-overlay" id="personalization-overlay" aria-hidden="true">
+    <section class="personalization-modal" role="dialog" aria-modal="true" aria-labelledby="personalization-title">
+        <button class="personalization-close" type="button" aria-label="Close" onclick="closePersonalization('later')">×</button>
+        <div class="personalization-kicker">Personalize MahaUpdate</div>
+        <h2 id="personalization-title">Make MahaUpdate yours</h2>
+        <p>Choose the departments and update types you care about. We will use these preferences for your future <strong>For You</strong> experience.</p>
+        <div class="personalization-section">
+            <h3>Follow departments</h3>
+            <div class="preference-chips" id="department-preferences"></div>
+        </div>
+        <div class="personalization-section">
+            <h3>Interested in</h3>
+            <div class="preference-chips" id="type-preferences"></div>
+        </div>
+        <div class="personalization-actions">
+            <button class="personalization-later" type="button" onclick="closePersonalization('later')">Maybe later</button>
+            <button class="personalization-save" type="button" onclick="savePersonalization()">Personalize My Updates</button>
+        </div>
+    </section>
+</div>
+
 <script>
 
     function toggleMenu() {
@@ -1564,6 +1610,75 @@ body[data-page="home"] .filter-row input,
             .toggle("open");
 
     }
+
+    // Smart personalization: show after 60 seconds OR 3 meaningful update interactions.
+    (function () {
+        const STORAGE_KEY = "mahaupdate_personalization";
+        const STATE_KEY = "mahaupdate_personalization_state";
+        const DEPARTMENTS = {{ sources | tojson }};
+        const TYPES = {{ types | tojson }};
+        const overlay = document.getElementById("personalization-overlay");
+        const departmentBox = document.getElementById("department-preferences");
+        const typeBox = document.getElementById("type-preferences");
+
+        function getState() {
+            try { return JSON.parse(localStorage.getItem(STATE_KEY) || "{}"); } catch (_) { return {}; }
+        }
+        function setState(state) { localStorage.setItem(STATE_KEY, JSON.stringify(state)); }
+        function selectedValues(selector) {
+            return Array.from(document.querySelectorAll(selector + ".selected")).map(el => el.dataset.value);
+        }
+        function renderChips(values, container, kind) {
+            values.forEach(value => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "preference-chip";
+                button.dataset.value = value;
+                button.dataset.kind = kind;
+                button.textContent = value;
+                button.addEventListener("click", () => button.classList.toggle("selected"));
+                container.appendChild(button);
+            });
+        }
+        window.closePersonalization = function(reason) {
+            overlay.classList.remove("show");
+            overlay.setAttribute("aria-hidden", "true");
+            const state = getState();
+            state.dismissedAt = Date.now();
+            state.reason = reason;
+            setState(state);
+        };
+        window.savePersonalization = function() {
+            const preferences = {
+                departments: selectedValues("#department-preferences .preference-chip"),
+                types: selectedValues("#type-preferences .preference-chip"),
+                savedAt: Date.now()
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
+            closePersonalization("saved");
+        };
+        function showPopup() {
+            const state = getState();
+            if (localStorage.getItem(STORAGE_KEY) || state.dismissedAt) return;
+            overlay.classList.add("show");
+            overlay.setAttribute("aria-hidden", "false");
+        }
+        renderChips(DEPARTMENTS, departmentBox, "department");
+        renderChips(TYPES, typeBox, "type");
+
+        const state = getState();
+        if (!localStorage.getItem(STORAGE_KEY) && !state.dismissedAt) {
+            setTimeout(showPopup, 60000);
+            document.querySelectorAll("a.official-button").forEach(link => {
+                link.addEventListener("click", () => {
+                    const current = getState();
+                    current.interactions = (current.interactions || 0) + 1;
+                    setState(current);
+                    if (current.interactions >= 3) showPopup();
+                });
+            });
+        }
+    })();
 
 </script>
 
@@ -2124,7 +2239,7 @@ OFFICIAL_DOMAINS = {
     "MAHATRANSCO": ("mahatransco.in",),
     "MAHAGENCO": ("mahagenco.in",),
     "MJP": ("mjp.maharashtra.gov.in",),
-    "PWD": ("mahapwd.gov.in",),
+    "PWD": ("mahapwd.gov.in", "cdnbbsr.s3waas.gov.in"),
     "NHM": ("arogya.maharashtra.gov.in", "nhm.maharashtra.gov.in"),
     "DMA": ("mahadma.maharashtra.gov.in",),
     "DMER": ("dmer.maharashtra.gov.in",),
