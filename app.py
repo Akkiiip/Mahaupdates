@@ -1,12 +1,13 @@
 import os
 import re
+import json
 import unicodedata
 from difflib import SequenceMatcher
 from datetime import datetime
 from time import monotonic
-from urllib.parse import quote, unquote, urlparse, quote_plus
+from urllib.parse import quote, unquote, urlparse, quote_plus, urlencode
 
-from flask import Flask, render_template_string, request, redirect
+from flask import Flask, Response, render_template_string, request, redirect
 from notification_validation import create_client
 from notification_validation import is_valid_notification_title
 
@@ -21,6 +22,7 @@ app = Flask(__name__)
 UPDATES_PER_PAGE = 12
 MAX_PAGE_NUMBER = 1000
 VALID_UPDATE_CANDIDATE_LIMIT = 5000
+CANONICAL_BASE_URL = os.getenv("CANONICAL_BASE_URL", "https://mahaupdates.onrender.com").rstrip("/")
 
 
 # ============================================================
@@ -38,7 +40,15 @@ PAGE = """
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>{{ page_title }} | MahaUpdate</title>
+    <title>{{ page_title }}</title>
+    <meta name="description" content="{{ meta_description }}">
+    <link rel="canonical" href="{{ canonical_url }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MahaUpdate">
+    <meta property="og:title" content="{{ page_title }}">
+    <meta property="og:description" content="{{ meta_description }}">
+    <meta property="og:url" content="{{ canonical_url }}">
+    <script type="application/ld+json">{{ structured_data | tojson }}</script>
 
     <link rel="icon" type="image/png" href="{{ logo_data_uri }}">
 
@@ -1636,6 +1646,42 @@ def get_supabase():
     return create_client(url, key)
 
 
+def canonical_url(path, **params):
+    """Create a stable production URL without trusting the incoming Host header."""
+    query = {key: value for key, value in params.items() if value}
+    suffix = ("?" + urlencode(query)) if query else ""
+    return f"{CANONICAL_BASE_URL}{path}{suffix}"
+
+
+def page_seo(page_type, path, update_type="", source=""):
+    titles = {
+        "home": "MahaUpdate – Latest Maharashtra Government Jobs, Results & Notifications",
+        "updates": "Latest Maharashtra Government Updates | MahaUpdate",
+        "departments": "Maharashtra Government Departments | MahaUpdate",
+        "mpsc": "MPSC Updates, Results & Notifications | MahaUpdate",
+        "midc": "MIDC Recruitment & Job Updates | MahaUpdate",
+        "about": "About MahaUpdate | Maharashtra Government Updates",
+    }
+    descriptions = {
+        "home": "Latest Maharashtra government jobs, recruitment notices, exam results, admit cards and official notifications in one place.",
+        "updates": "Browse official Maharashtra government recruitment updates, results, admit cards and notifications.",
+        "departments": "Browse Maharashtra government updates by department and official source.",
+        "mpsc": "Latest MPSC recruitment, examination, result and official notification updates.",
+        "midc": "Latest MIDC recruitment, result and official job notification updates.",
+        "about": "Learn how MahaUpdate helps people find official Maharashtra government updates.",
+    }
+    category = {
+        "Advertisement": ("Maharashtra Government Recruitment & Job Updates | MahaUpdate", "Official Maharashtra government recruitment and job advertisement updates."),
+        "Result": ("Maharashtra Government Exam Results | MahaUpdate", "Official Maharashtra government exam results, merit lists and selection updates."),
+        "Hall Ticket": ("Maharashtra Government Admit Cards | MahaUpdate", "Official Maharashtra government admit cards, hall tickets and examination updates."),
+    }
+    title, description = category.get(update_type, (titles[page_type], descriptions[page_type]))
+    if source and not update_type:
+        title = f"{source} Updates | MahaUpdate"
+        description = f"Official {source} recruitment, result and notification updates."
+    return title, description, canonical_url(path, type=update_type, source=source)
+
+
 
 _FILTER_CACHE = {"expires": 0.0, "sources": [], "types": []}
 FILTER_CACHE_SECONDS = 60
@@ -1989,8 +2035,17 @@ def render_page(
             params.append("page=" + str(number))
             return request.path + "?" + "&".join(params)
 
+        seo_title, meta_description, page_canonical = page_seo(
+            page_type, request.path, update_type, selected_source if not fixed_source else ""
+        )
+        structured_data = {
+            "@context": "https://schema.org", "@type": "WebSite", "name": "MahaUpdate",
+            "url": CANONICAL_BASE_URL,
+            "description": "Official Maharashtra government jobs, results and notification updates.",
+        }
+
         return render_template_string(
-            PAGE, page_type=page_type, page_title=page_title, active_page=active_page,
+            PAGE, page_type=page_type, page_title=seo_title, active_page=active_page,
             show_updates=(page_type != "about"), show_filters=show_filters,
             updates=updates, total_updates=total_updates, total_pages=total_pages,
             page=page, pagination_items=build_pagination_items(page, total_pages),
@@ -1999,6 +2054,8 @@ def render_page(
             update_type=update_type, current_path=request.path,
             pagination_url=pagination_url, format_date=format_date,
             source_display_name=source_display_name, logo_data_uri=LOGO_DATA_URI,
+            meta_description=meta_description, canonical_url=page_canonical,
+            structured_data=structured_data,
         )
     except Exception:
         app.logger.exception("MahaUpdate render failure")
@@ -2085,7 +2142,7 @@ def departments_page():
     return render_template_string(
         PAGE,
         page_type="departments",
-        page_title="All Departments",
+        page_title="Maharashtra Government Departments | MahaUpdate",
         active_page="departments",
         show_updates=False,
         logo_data_uri=LOGO_DATA_URI,
@@ -2103,7 +2160,10 @@ def departments_page():
         pagination_url=lambda n: "/departments",
         format_date=format_date,
         source_display_name=source_display_name,
-        pagination_items=[]
+        pagination_items=[],
+        meta_description="Browse Maharashtra government updates by department and official source.",
+        canonical_url=canonical_url("/departments"),
+        structured_data={"@context": "https://schema.org", "@type": "WebSite", "name": "MahaUpdate", "url": CANONICAL_BASE_URL},
     )
 
 @app.route("/about")
@@ -2125,6 +2185,28 @@ def about_page():
 # ============================================================
 # INTERNAL OFFICIAL LINK ROUTE
 # ============================================================
+
+@app.route("/robots.txt")
+def robots_txt():
+    return Response(
+        "User-agent: *\nAllow: /\nDisallow: /go\nDisallow: /health\n\n"
+        f"Sitemap: {canonical_url('/sitemap.xml')}\n",
+        content_type="text/plain; charset=utf-8",
+    )
+
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    urls = [
+        canonical_url("/"), canonical_url("/updates"), canonical_url("/departments"),
+        canonical_url("/mpsc"), canonical_url("/midc"), canonical_url("/about"),
+        canonical_url("/updates", type="Advertisement"),
+        canonical_url("/updates", type="Result"),
+        canonical_url("/updates", type="Hall Ticket"),
+    ]
+    body = "".join(f"<url><loc>{url}</loc></url>" for url in urls)
+    xml = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>'
+    return Response(xml, content_type="application/xml; charset=utf-8")
 
 
 # Canonical source names keep redirect validation strict while supporting
