@@ -1641,9 +1641,11 @@ def get_filter_options():
         return _FILTER_CACHE["sources"], _FILTER_CACHE["types"]
 
     supabase = get_supabase()
-    response = supabase.table("updates").select("source,type").execute()
-    rows = response.data or []
-    rows = [row for row in rows if is_valid_notification_title(row.get("title"))]
+    response = supabase.table("updates").select("source,type,title").execute()
+    rows = [
+        row for row in (response.data or [])
+        if is_valid_notification_title(row.get("title"))
+    ]
     sources = sorted({row.get("source") for row in rows if row.get("source")})
     types = sorted({row.get("type") for row in rows if row.get("type")})
     _FILTER_CACHE.update({
