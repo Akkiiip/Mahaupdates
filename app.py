@@ -1578,8 +1578,11 @@ function toggleMenu(){document.getElementById("main-nav").classList.toggle("open
  const KEY="mahaupdate_preferences_v1", DISMISS="mahaupdate_preferences_dismissed_v1";
  const overlay=document.getElementById("personalizationOverlay"), srcBox=document.getElementById("sourcePreferences"), typeBox=document.getElementById("typePreferences");
  const cards=()=>Array.from(document.querySelectorAll(".update-card"));
- const sources=[...new Set(cards().map(c=>c.dataset.source).filter(Boolean))].sort();
- const types=[...new Set(cards().map(c=>c.dataset.type).filter(Boolean))].sort();
+
+// Get ALL available departments and update types from Flask/Supabase,
+// not only from the currently visible update cards.
+const sources = {{ sources|tojson }};
+const types = {{ types|tojson }};
  function load(){try{return JSON.parse(localStorage.getItem(KEY))||{sources:[],types:[]};}catch(e){return {sources:[],types:[]};}}
  function chip(value,box,selected){const b=document.createElement("button");b.type="button";b.className="pref-option"+(selected.includes(value)?" selected":"");b.textContent=value;b.dataset.value=value;b.onclick=()=>b.classList.toggle("selected");box.appendChild(b);}
  function render(){const p=load();srcBox.innerHTML="";typeBox.innerHTML="";sources.forEach(v=>chip(v,srcBox,p.sources||[]));types.forEach(v=>chip(v,typeBox,p.types||[]));}
