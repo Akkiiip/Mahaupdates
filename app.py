@@ -42,6 +42,7 @@ PAGE = """
 
     <title>{{ page_title }}</title>
     <meta name="description" content="{{ meta_description }}">
+    <meta name="google-site-verification" content="RwhGnuSQhrWHJvVS69IWTnafx-e2t6XAKwtNaJm9QdQ" />
     <link rel="canonical" href="{{ canonical_url }}">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="MahaUpdate">
