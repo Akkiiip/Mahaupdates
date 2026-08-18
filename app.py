@@ -1277,6 +1277,11 @@ body[data-page="home"] .filter-row input,
 
     </div>
 
+{% elif page_type in ("privacy", "disclaimer", "terms", "contact") %}
+
+    <section class="hero"><h1>{{ legal_heading }}</h1><p>{{ legal_intro }}</p></section>
+    <div class="about-card">{{ legal_content | safe }}</div>
+
 
 {% endif %}
 
@@ -1584,6 +1589,9 @@ body[data-page="home"] .filter-row input,
 
     Latest updates from official Maharashtra government sources.
 
+    <br><br>
+    <a href="/about">About</a> · <a href="/privacy">Privacy Policy</a> · <a href="/disclaimer">Disclaimer</a> · <a href="/terms">Terms</a> · <a href="/contact">Contact</a>
+
 </footer>
 
 
@@ -1629,6 +1637,13 @@ LOGO_DATA_URI = re.search(
     r'<img src="(data:image/png;base64,[^"]+)" alt="MahaUpdate logo">', PAGE
 ).group(1)
 
+LEGAL_PAGES = {
+    "privacy": {"heading": "Privacy Policy", "intro": "How MahaUpdate handles information.", "content": "<h2>Information we collect</h2><p>MahaUpdate does not require accounts and does not ask visitors to provide personal information through this website.</p><h2>Cookies and third parties</h2><p>Your browser may store preferences locally. Hosting providers, analytics services, or advertising services may use cookies if they are enabled in the future. This policy will be updated if services that collect personal information are added.</p><h2>Official links</h2><p>MahaUpdate links to external official websites. Their privacy practices are governed by their own policies.</p><h2>Contact</h2><p>Contact details will be published here when a verified support channel is available.</p>"},
+    "disclaimer": {"heading": "Disclaimer", "intro": "Please verify important information with the official source.", "content": "<p>MahaUpdate is an independent informational platform and is not a government website. It aggregates publicly available Maharashtra government updates and links to official sources.</p><p>Details, dates, eligibility and notices can change after publication. Always verify important information on the linked official department website; that source is authoritative. MahaUpdate is not responsible for changes made by official departments after an update is listed.</p>"},
+    "terms": {"heading": "Terms of Use", "intro": "Simple terms for using MahaUpdate.", "content": "<p>MahaUpdate is provided for informational use. You may use it to discover public government updates and follow the linked official sources.</p><p>Do not rely on MahaUpdate as the sole source for decisions involving applications, examinations, deadlines or eligibility. You are responsible for checking the official source. Website content and availability may change without notice.</p>"},
+    "contact": {"heading": "Contact MahaUpdate", "intro": "Contact information and official-source guidance.", "content": "<p>MahaUpdate does not currently publish a verified email address, phone number or physical address. A direct contact channel will be listed here once available.</p><p>For questions about a recruitment notice, result, exam or application, please use the official department link shown with that update. The relevant government department is the authoritative contact for its notification.</p>"},
+}
+
 
 # ============================================================
 # HELPERS
@@ -1662,6 +1677,10 @@ def page_seo(page_type, path, update_type="", source=""):
         "mpsc": "MPSC Updates, Results & Notifications | MahaUpdate",
         "midc": "MIDC Recruitment & Job Updates | MahaUpdate",
         "about": "About MahaUpdate | Maharashtra Government Updates",
+        "privacy": "Privacy Policy | MahaUpdate",
+        "disclaimer": "Disclaimer | MahaUpdate",
+        "terms": "Terms of Use | MahaUpdate",
+        "contact": "Contact MahaUpdate",
     }
     descriptions = {
         "home": "Latest Maharashtra government jobs, recruitment notices, exam results, admit cards and official notifications in one place.",
@@ -1670,6 +1689,10 @@ def page_seo(page_type, path, update_type="", source=""):
         "mpsc": "Latest MPSC recruitment, examination, result and official notification updates.",
         "midc": "Latest MIDC recruitment, result and official job notification updates.",
         "about": "Learn how MahaUpdate helps people find official Maharashtra government updates.",
+        "privacy": "How MahaUpdate handles information, cookies and links to official sources.",
+        "disclaimer": "Important information about using MahaUpdate and official government sources.",
+        "terms": "Terms for using the MahaUpdate informational website.",
+        "contact": "Contact information and official-source guidance for MahaUpdate visitors.",
     }
     category = {
         "Advertisement": ("Maharashtra Government Recruitment & Job Updates | MahaUpdate", "Official Maharashtra government recruitment and job advertisement updates."),
@@ -2047,7 +2070,7 @@ def render_page(
 
         return render_template_string(
             PAGE, page_type=page_type, page_title=seo_title, active_page=active_page,
-            show_updates=(page_type != "about"), show_filters=show_filters,
+            show_updates=(page_type not in ("about", "privacy", "disclaimer", "terms", "contact")), show_filters=show_filters,
             updates=updates, total_updates=total_updates, total_pages=total_pages,
             page=page, pagination_items=build_pagination_items(page, total_pages),
             sources=sources, types=types, search=search,
@@ -2057,6 +2080,9 @@ def render_page(
             source_display_name=source_display_name, logo_data_uri=LOGO_DATA_URI,
             meta_description=meta_description, canonical_url=page_canonical,
             structured_data=structured_data,
+            legal_heading=LEGAL_PAGES.get(page_type, {}).get("heading", ""),
+            legal_intro=LEGAL_PAGES.get(page_type, {}).get("intro", ""),
+            legal_content=LEGAL_PAGES.get(page_type, {}).get("content", ""),
         )
     except Exception:
         app.logger.exception("MahaUpdate render failure")
@@ -2194,6 +2220,26 @@ def robots_txt():
         f"Sitemap: {canonical_url('/sitemap.xml')}\n",
         content_type="text/plain; charset=utf-8",
     )
+
+
+@app.route("/privacy")
+def privacy_page():
+    return render_page(page_type="privacy", page_title="Privacy Policy", active_page="", show_filters=False)
+
+
+@app.route("/disclaimer")
+def disclaimer_page():
+    return render_page(page_type="disclaimer", page_title="Disclaimer", active_page="", show_filters=False)
+
+
+@app.route("/terms")
+def terms_page():
+    return render_page(page_type="terms", page_title="Terms of Use", active_page="", show_filters=False)
+
+
+@app.route("/contact")
+def contact_page():
+    return render_page(page_type="contact", page_title="Contact MahaUpdate", active_page="", show_filters=False)
 
 
 @app.route("/sitemap.xml")
