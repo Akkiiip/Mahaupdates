@@ -1,6 +1,8 @@
 import unittest
+from types import SimpleNamespace
 
 from notification_validation import clean_notification_title, is_valid_notification_title, validated_create_client
+import app
 
 
 class NotificationValidationTests(unittest.TestCase):
@@ -33,6 +35,32 @@ class NotificationValidationTests(unittest.TestCase):
         client.table("updates").insert({"title": "Download"}).execute()
         client.table("updates").insert({"title": " Recruitment  Notice "}).execute()
         self.assertEqual(table.inserted, [{"title": "Recruitment Notice"}])
+
+    def test_valid_rows_are_filtered_before_pagination(self):
+        rows = [{"source": "Bad", "type": "Other", "title": "Download", "first_seen": "999"} for _ in range(6)]
+        rows += [{"source": "MPSC", "type": "Result", "title": f"Valid result {i}", "first_seen": f"{100 - i:03d}"} for i in range(14)]
+
+        class Query:
+            def select(self, *_args, **_kwargs): return self
+            def eq(self, *_args, **_kwargs): return self
+            def order(self, *_args, **_kwargs): return self
+            def range(self, *_args, **_kwargs): return self
+            def execute(self): return SimpleNamespace(data=rows)
+        class Client:
+            def table(self, _name): return Query()
+
+        original = app.get_supabase
+        try:
+            app.get_supabase = lambda: Client()
+            page_one, total = app.get_filtered_updates_from_db(page=1, per_page=12)
+            page_two, _ = app.get_filtered_updates_from_db(page=2, per_page=12)
+            app._FILTER_CACHE["expires"] = 0
+            sources, types = app.get_filter_options()
+        finally:
+            app.get_supabase = original
+
+        self.assertEqual((len(page_one), len(page_two), total), (12, 2, 14))
+        self.assertEqual((sources, types), (["MPSC"], ["Result"]))
 
 
 if __name__ == "__main__":

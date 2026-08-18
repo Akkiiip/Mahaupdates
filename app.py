@@ -20,6 +20,7 @@ app = Flask(__name__)
 
 UPDATES_PER_PAGE = 12
 MAX_PAGE_NUMBER = 1000
+VALID_UPDATE_CANDIDATE_LIMIT = 5000
 
 
 # ============================================================
@@ -1641,7 +1642,9 @@ def get_filter_options():
         return _FILTER_CACHE["sources"], _FILTER_CACHE["types"]
 
     supabase = get_supabase()
-    response = supabase.table("updates").select("source,type,title").execute()
+    response = supabase.table("updates").select("source,type,title").range(
+        0, VALID_UPDATE_CANDIDATE_LIMIT - 1
+    ).execute()
     rows = [
         row for row in (response.data or [])
         if is_valid_notification_title(row.get("title"))
@@ -1687,17 +1690,12 @@ def get_search_updates_from_db(search="", selected_source="", update_type="", pa
     if update_type:
         base = base.eq("type", update_type)
 
-    start_row = max(0, (page - 1) * per_page)
-    response = base.order("first_seen", desc=True).range(
-        start_row, start_row + per_page - 1
-    ).execute()
-
-    direct_rows = [row for row in (response.data or []) if is_valid_notification_title(row.get("title"))]
-    direct_total = response.count if response.count is not None else len(direct_rows)
+    direct_rows = get_valid_rows(base)
+    direct_total = len(direct_rows)
 
     # Literal/alias search succeeded: keep the fast database path.
     if direct_total:
-        return direct_rows, direct_total
+        return page_of_rows(direct_rows, page, per_page), direct_total
 
     # Typo fallback: fetch a capped recent candidate set, then use the existing
     # smart_match() similarity logic. This handles firemn -> fireman without
@@ -1710,17 +1708,29 @@ def get_search_updates_from_db(search="", selected_source="", update_type="", pa
     if update_type:
         fallback = fallback.eq("type", update_type)
 
-    candidate_limit = 5000
-    candidates = fallback.order("first_seen", desc=True).range(
-        0, candidate_limit - 1
-    ).execute().data or []
+    candidates = get_valid_rows(fallback)
 
     matches = [item for item in candidates if is_valid_notification_title(item.get("title")) and smart_match(search, item)]
     matches.sort(key=lambda item: item.get("first_seen") or "", reverse=True)
 
     total = len(matches)
-    start = start_row
-    return matches[start:start + per_page], total
+    return page_of_rows(matches, page, per_page), total
+
+def get_valid_rows(query):
+    """Read candidates, reject junk, then let callers paginate valid records."""
+    response = query.order("first_seen", desc=True).range(
+        0, VALID_UPDATE_CANDIDATE_LIMIT - 1
+    ).execute()
+    return [
+        row for row in (response.data or [])
+        if is_valid_notification_title(row.get("title"))
+    ]
+
+
+def page_of_rows(rows, page, per_page):
+    start = max(0, (page - 1) * per_page)
+    return rows[start:start + per_page]
+
 
 def get_filtered_updates_from_db(selected_source="", update_type="", page=1, per_page=12):
     supabase = get_supabase()
@@ -1731,13 +1741,8 @@ def get_filtered_updates_from_db(selected_source="", update_type="", page=1, per
         query = query.eq("source", selected_source)
     if update_type:
         query = query.eq("type", update_type)
-    response = query.order("first_seen", desc=True).range(
-        max(0, (page - 1) * per_page), max(0, (page - 1) * per_page) + per_page - 1
-    ).execute()
-    rows = [row for row in (response.data or []) if is_valid_notification_title(row.get("title"))]
-    # Count reflects displayed rows on this page; records are also cleaned by the
-    # idempotent maintenance script, so this fallback never renders junk.
-    return rows, len(rows)
+    rows = get_valid_rows(query)
+    return page_of_rows(rows, page, per_page), len(rows)
 
 
 def build_pagination_items(current, total):
