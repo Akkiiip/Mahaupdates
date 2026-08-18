@@ -19,7 +19,7 @@ from urllib.parse import quote
 import requests
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from supabase import create_client
+from notification_validation import create_client
 
 
 BASE_URL = "https://mpsc.gov.in"

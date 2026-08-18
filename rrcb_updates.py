@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-from supabase import create_client
+from notification_validation import create_client
 from seo_utils import clean, classify, seo_metadata
 
 URL='https://www.rrcb.gov.in/Employment_notices.html'

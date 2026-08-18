@@ -4,7 +4,7 @@ from datetime import datetime,timezone
 from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
-from supabase import create_client
+from notification_validation import create_client
 from seo_utils import clean,classify,seo_metadata
 URL='https://wcdchrms.in/posts?district_id=39'
 def main():

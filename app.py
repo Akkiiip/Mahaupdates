@@ -7,7 +7,8 @@ from time import monotonic
 from urllib.parse import quote, unquote, urlparse, quote_plus
 
 from flask import Flask, render_template_string, request, redirect
-from supabase import create_client
+from notification_validation import create_client
+from notification_validation import is_valid_notification_title
 
 
 app = Flask(__name__)
@@ -1642,6 +1643,7 @@ def get_filter_options():
     supabase = get_supabase()
     response = supabase.table("updates").select("source,type").execute()
     rows = response.data or []
+    rows = [row for row in rows if is_valid_notification_title(row.get("title"))]
     sources = sorted({row.get("source") for row in rows if row.get("source")})
     types = sorted({row.get("type") for row in rows if row.get("type")})
     _FILTER_CACHE.update({
@@ -1688,7 +1690,7 @@ def get_search_updates_from_db(search="", selected_source="", update_type="", pa
         start_row, start_row + per_page - 1
     ).execute()
 
-    direct_rows = response.data or []
+    direct_rows = [row for row in (response.data or []) if is_valid_notification_title(row.get("title"))]
     direct_total = response.count if response.count is not None else len(direct_rows)
 
     # Literal/alias search succeeded: keep the fast database path.
@@ -1711,7 +1713,7 @@ def get_search_updates_from_db(search="", selected_source="", update_type="", pa
         0, candidate_limit - 1
     ).execute().data or []
 
-    matches = [item for item in candidates if smart_match(search, item)]
+    matches = [item for item in candidates if is_valid_notification_title(item.get("title")) and smart_match(search, item)]
     matches.sort(key=lambda item: item.get("first_seen") or "", reverse=True)
 
     total = len(matches)
@@ -1730,7 +1732,10 @@ def get_filtered_updates_from_db(selected_source="", update_type="", page=1, per
     response = query.order("first_seen", desc=True).range(
         max(0, (page - 1) * per_page), max(0, (page - 1) * per_page) + per_page - 1
     ).execute()
-    return response.data or [], (response.count if response.count is not None else len(response.data or []))
+    rows = [row for row in (response.data or []) if is_valid_notification_title(row.get("title"))]
+    # Count reflects displayed rows on this page; records are also cleaned by the
+    # idempotent maintenance script, so this fallback never renders junk.
+    return rows, len(rows)
 
 
 def build_pagination_items(current, total):

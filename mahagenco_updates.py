@@ -6,7 +6,8 @@ from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
-from supabase import create_client
+from notification_validation import create_client
+from notification_validation import is_valid_notification_title
 
 URL = "https://www.mahagenco.in/career-advertisement"
 KEYWORDS = (
@@ -31,8 +32,7 @@ def normalized(value):
 
 
 def meaningful(value):
-    text = normalized(value)
-    return bool(text) and text not in {normalized(item) for item in GENERIC_TITLES}
+    return is_valid_notification_title(value)
 
 
 def classify(title):

@@ -4,7 +4,7 @@ from collections import Counter, defaultdict
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
-from supabase import create_client
+from notification_validation import create_client
 
 load_dotenv()
 

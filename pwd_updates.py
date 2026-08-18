@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
-from supabase import create_client
+from notification_validation import create_client
 
 URL = "https://pwd.maharashtra.gov.in/en/notice-category/recruitments/"
 SOURCE = "PWD"

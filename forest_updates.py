@@ -4,7 +4,7 @@ from datetime import datetime,timezone
 from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
-from supabase import create_client
+from notification_validation import create_client
 URL="https://mahaforest.gov.in/index.php/fieldoffice/News/index/RlBzMW8rMWFWdjVRWXc9PQ%3D%3D/Ri8wb3Z1dEFTZnhTWlZNPQ%3D%3D/en"
 KEYWORDS=("recruitment","recruit","advertisement","appointment","veterinary officer","junior research fellow","selection","waiting","result","exam","interview")
 def clean(s):return re.sub(r"\s+"," ",s or "").strip()

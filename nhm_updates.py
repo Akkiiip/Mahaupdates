@@ -7,7 +7,7 @@ from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
-from supabase import create_client
+from notification_validation import create_client
 
 URL = "https://nhm.maharashtra.gov.in/en/notice-category/recruitments/"
 KEYWORDS = ("recruit", "advertisement", "interview", "eligible", "selection", "result", "vacancy", "post")

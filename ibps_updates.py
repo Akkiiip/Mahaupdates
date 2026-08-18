@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
-from supabase import create_client
+from notification_validation import create_client
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request")
 HEADERS = {"User-Agent": "Mozilla/5.0"}

@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 
 from flask import Flask, redirect, render_template_string, request, url_for
-from supabase import create_client
+from notification_validation import create_client
 
 app = Flask(__name__)
 

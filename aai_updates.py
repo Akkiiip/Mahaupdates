@@ -21,7 +21,7 @@ from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
-from supabase import create_client
+from notification_validation import create_client
 
 
 if hasattr(sys.stdout, "reconfigure"):

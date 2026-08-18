@@ -59,3 +59,14 @@ def _patched_session_init(self, *args, **kwargs):
     self.mount("https://", adapter)
 
 requests.Session.__init__ = _patched_session_init
+
+# Every scraper imports ``create_client`` directly from supabase.  Patching it
+# here makes the shared title gate unavoidable for every current and future
+# scraper launched from this repository, without relying on per-scraper lists.
+try:
+    import supabase
+    from notification_validation import validated_create_client
+    supabase.create_client = validated_create_client(supabase.create_client)
+except ImportError:
+    # Allows lightweight tools that do not install scraper dependencies to run.
+    pass

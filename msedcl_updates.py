@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
-from supabase import create_client
+from notification_validation import create_client
 
 URL = "https://www.mahadiscom.in/en/recruitment-career-options/"
 KEYWORDS = ("recruit", "advt", "advertisement", "result", "selection", "wait list", "waiting", "document verification", "corrigendum", "exam", "hall ticket", "candidate")

@@ -20,7 +20,8 @@ from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
-from supabase import create_client
+from notification_validation import create_client
+from notification_validation import is_valid_notification_title
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -121,7 +122,7 @@ def find_bad_records(rows):
         source = clean(row.get("source"))
         reason = None
 
-        if is_navigation_title(title):
+        if not is_valid_notification_title(title) or is_navigation_title(title):
             reason = f"generic_or_navigation_title:{title_norm or 'empty'}"
         elif is_social_url(url):
             reason = "social_media_url"
