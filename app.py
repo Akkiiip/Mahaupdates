@@ -989,7 +989,7 @@ PAGE = """
         .badge{max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         
         @media(max-width:1000px){.department-grid{grid-template-columns:repeat(4,1fr)}.updates{grid-template-columns:repeat(2,1fr)}}
-        @media(max-width:700px){.department-showcase{padding:14px;border-radius:16px}.department-grid{grid-template-columns:repeat(3,1fr);gap:8px}.department-chip{min-height:98px;padding:10px 5px}.department-icon{font-size:22px}.department-chip strong{font-size:11px}.department-chip small{font-size:10px}.updates{grid-template-columns:1fr}}
+        @media(max-width:700px){.department-showcase{padding:14px;border-radius:16px}.department-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.department-chip{min-width:0;min-height:98px;padding:10px 5px}.department-icon{font-size:22px}.department-chip strong{font-size:11px;white-space:normal;overflow-wrap:anywhere;text-overflow:clip}.department-chip small{font-size:10px}.updates{grid-template-columns:1fr}}
 
     
         /* ===== Advertisement system ===== */
