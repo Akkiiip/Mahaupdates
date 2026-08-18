@@ -1020,30 +1020,6 @@ body[data-page="home"] .filter-row input,
 }
 
 
-
-        /* ===================================================
-           PERSONALIZATION POPUP
-        =================================================== */
-        .personalization-overlay{position:fixed;inset:0;background:rgba(11,31,58,.58);display:none;align-items:center;justify-content:center;padding:20px;z-index:2000;backdrop-filter:blur(3px)}
-        .personalization-overlay.show{display:flex}
-        .personalization-modal{width:min(680px,100%);max-height:min(760px,calc(100vh - 40px));overflow:auto;background:#fff;border-radius:22px;box-shadow:0 28px 80px rgba(11,31,58,.28);padding:28px;position:relative}
-        .personalization-close{position:absolute;right:16px;top:14px;width:36px;height:36px;border:0;background:transparent;color:var(--muted);font-size:25px;cursor:pointer;border-radius:50%}
-        .personalization-close:hover{background:#f1f5f9;color:var(--text)}
-        .personalization-kicker{color:var(--saffron);font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
-        .personalization-modal h2{margin:0 38px 8px 0;color:var(--navy);font-size:28px;line-height:1.15}
-        .personalization-modal>p{margin:0 0 22px;color:var(--muted);line-height:1.55}
-        .personalization-section{margin-top:22px}
-        .personalization-section h3{margin:0 0 10px;font-size:15px;color:var(--text)}
-        .preference-chips{display:flex;flex-wrap:wrap;gap:9px}
-        .preference-chip{border:1px solid var(--border);background:#fff;color:var(--text);padding:9px 13px;border-radius:999px;font:inherit;font-size:13px;font-weight:650;cursor:pointer;transition:.18s ease}
-        .preference-chip:hover{border-color:var(--saffron)}
-        .preference-chip.selected{background:var(--navy);border-color:var(--navy);color:#fff;box-shadow:0 4px 12px rgba(11,31,58,.16)}
-        .personalization-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:28px;padding-top:18px;border-top:1px solid var(--border)}
-        .personalization-later{border:0;background:transparent;color:var(--muted);font:inherit;font-weight:700;padding:10px;cursor:pointer}
-        .personalization-save{border:0;background:var(--saffron);color:#fff;border-radius:10px;padding:12px 18px;font:inherit;font-weight:800;cursor:pointer;box-shadow:0 8px 18px rgba(245,158,11,.22)}
-        .personalization-save:hover{filter:brightness(.96)}
-        @media(max-width:700px){.personalization-overlay{align-items:flex-end;padding:0}.personalization-modal{width:100%;max-height:88vh;border-radius:22px 22px 0 0;padding:24px 18px 18px}.personalization-modal h2{font-size:24px}.preference-chip{font-size:12px;padding:8px 11px}.personalization-actions{position:sticky;bottom:-18px;background:#fff;padding-bottom:18px;margin-left:-18px;margin-right:-18px;padding-left:18px;padding-right:18px}.personalization-save{flex:1}}
-
         @media(max-width:700px){
             .brand{gap:8px}
             .logo{width:48px;height:48px;flex-basis:48px}
@@ -1079,12 +1055,15 @@ body[data-page="home"] .filter-row input,
     .floating-ad-close{width:21px;height:21px;font-size:16px;line-height:19px}
 }
 
+
+/* Personalization */
+.home-actions{display:flex;gap:10px;align-items:center}.button-secondary{background:#fff;color:#2f3b52;border:1px solid #dce2ec}.button-secondary:hover{background:#f4f6f9}.personalization-overlay{position:fixed;inset:0;background:rgba(15,23,42,.48);display:none;align-items:center;justify-content:center;padding:18px;z-index:9999}.personalization-overlay.show{display:flex}.personalization-modal{background:#fff;width:min(620px,100%);max-height:88vh;overflow:auto;border-radius:22px;padding:26px;box-shadow:0 24px 80px rgba(0,0,0,.25)}.personalization-modal h2{margin:0 0 8px;color:#172033}.personalization-modal p{margin:0 0 18px;color:#657086}.pref-group{margin:20px 0}.pref-group h3{margin:0 0 10px;font-size:15px;color:#253047}.pref-options{display:flex;flex-wrap:wrap;gap:8px}.pref-option{border:1px solid #dce2ec;background:#fff;border-radius:999px;padding:8px 12px;cursor:pointer;font:inherit;font-size:13px}.pref-option.selected{background:#172033;color:#fff;border-color:#172033}.pref-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;flex-wrap:wrap}.pref-link{border:0;background:transparent;color:#667085;padding:10px;cursor:pointer;font:inherit}.personalized-mode-note{display:none;margin:0 0 14px;padding:10px 13px;border-radius:10px;background:#f3f6fb;color:#3d4b63;font-size:13px}.personalized-mode-note.show{display:block}@media(max-width:600px){.home-actions{width:100%;justify-content:space-between}.personalization-modal{padding:20px;border-radius:18px}.pref-actions{justify-content:stretch}.pref-actions button{flex:1}}
 </style>
 
 </head>
 
 
-<body>
+<body data-page-type="{{ page_type }}">
 
 
 <header>
@@ -1155,9 +1134,12 @@ body[data-page="home"] .filter-row input,
 
         <h2>Latest Updates</h2>
 
-        <a href="/updates" class="button">
-            View All →
-        </a>
+        <div class="home-actions">
+            <button type="button" class="button button-secondary" id="forYouButton">✨ For You</button>
+            <a href="/updates" class="button">
+                View All →
+            </a>
+        </div>
 
     </div>
 
@@ -1377,6 +1359,7 @@ body[data-page="home"] .filter-row input,
 
     </div>
 
+    <div class="personalized-mode-note" id="personalizedModeNote">✨ Showing updates matching your preferences first. <button type="button" class="pref-link" id="editPreferencesButton">Edit preferences</button></div>
 
     {% if updates %}
 
@@ -1386,7 +1369,7 @@ body[data-page="home"] .filter-row input,
         {% for update in updates %}
 
 
-            <article class="update-card">
+            <article class="update-card" data-source="{{ update.source|e }}" data-type="{{ update.type|e }}">
 
 
                 <div class="update-top">
@@ -1567,6 +1550,17 @@ body[data-page="home"] .filter-row input,
     <button class="floating-ad-close" onclick="document.getElementById('floatingAd').remove()" aria-label="Close">×</button>
 </div>
 
+
+<div class="personalization-overlay" id="personalizationOverlay" aria-hidden="true">
+  <div class="personalization-modal" role="dialog" aria-modal="true" aria-labelledby="personalizationTitle">
+    <h2 id="personalizationTitle">Make MahaUpdate yours</h2>
+    <p>Choose what you care about. We will use these preferences to prioritize relevant updates on this device.</p>
+    <div class="pref-group"><h3>Departments</h3><div class="pref-options" id="sourcePreferences"></div></div>
+    <div class="pref-group"><h3>Update types</h3><div class="pref-options" id="typePreferences"></div></div>
+    <div class="pref-actions"><button type="button" class="pref-link" id="maybeLaterButton">Maybe later</button><button type="button" class="button" id="savePreferencesButton">Personalize My Updates</button></div>
+  </div>
+</div>
+
 <footer>
 
     <strong>MahaUpdate</strong>
@@ -1578,108 +1572,29 @@ body[data-page="home"] .filter-row input,
 </footer>
 
 
-<!-- Smart personalization popup: hidden until meaningful browsing -->
-<div class="personalization-overlay" id="personalization-overlay" aria-hidden="true">
-    <section class="personalization-modal" role="dialog" aria-modal="true" aria-labelledby="personalization-title">
-        <button class="personalization-close" type="button" aria-label="Close" onclick="closePersonalization('later')">×</button>
-        <div class="personalization-kicker">Personalize MahaUpdate</div>
-        <h2 id="personalization-title">Make MahaUpdate yours</h2>
-        <p>Choose the departments and update types you care about. We will use these preferences for your future <strong>For You</strong> experience.</p>
-        <div class="personalization-section">
-            <h3>Follow departments</h3>
-            <div class="preference-chips" id="department-preferences"></div>
-        </div>
-        <div class="personalization-section">
-            <h3>Interested in</h3>
-            <div class="preference-chips" id="type-preferences"></div>
-        </div>
-        <div class="personalization-actions">
-            <button class="personalization-later" type="button" onclick="closePersonalization('later')">Maybe later</button>
-            <button class="personalization-save" type="button" onclick="savePersonalization()">Personalize My Updates</button>
-        </div>
-    </section>
-</div>
-
 <script>
-
-    function toggleMenu() {
-
-        document
-            .getElementById("main-nav")
-            .classList
-            .toggle("open");
-
-    }
-
-    // Smart personalization: show after 60 seconds OR 3 meaningful update interactions.
-    (function () {
-        const STORAGE_KEY = "mahaupdate_personalization";
-        const STATE_KEY = "mahaupdate_personalization_state";
-        const DEPARTMENTS = {{ sources | tojson }};
-        const TYPES = {{ types | tojson }};
-        const overlay = document.getElementById("personalization-overlay");
-        const departmentBox = document.getElementById("department-preferences");
-        const typeBox = document.getElementById("type-preferences");
-
-        function getState() {
-            try { return JSON.parse(localStorage.getItem(STATE_KEY) || "{}"); } catch (_) { return {}; }
-        }
-        function setState(state) { localStorage.setItem(STATE_KEY, JSON.stringify(state)); }
-        function selectedValues(selector) {
-            return Array.from(document.querySelectorAll(selector + ".selected")).map(el => el.dataset.value);
-        }
-        function renderChips(values, container, kind) {
-            values.forEach(value => {
-                const button = document.createElement("button");
-                button.type = "button";
-                button.className = "preference-chip";
-                button.dataset.value = value;
-                button.dataset.kind = kind;
-                button.textContent = value;
-                button.addEventListener("click", () => button.classList.toggle("selected"));
-                container.appendChild(button);
-            });
-        }
-        window.closePersonalization = function(reason) {
-            overlay.classList.remove("show");
-            overlay.setAttribute("aria-hidden", "true");
-            const state = getState();
-            state.dismissedAt = Date.now();
-            state.reason = reason;
-            setState(state);
-        };
-        window.savePersonalization = function() {
-            const preferences = {
-                departments: selectedValues("#department-preferences .preference-chip"),
-                types: selectedValues("#type-preferences .preference-chip"),
-                savedAt: Date.now()
-            };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
-            closePersonalization("saved");
-        };
-        function showPopup() {
-            const state = getState();
-            if (localStorage.getItem(STORAGE_KEY) || state.dismissedAt) return;
-            overlay.classList.add("show");
-            overlay.setAttribute("aria-hidden", "false");
-        }
-        renderChips(DEPARTMENTS, departmentBox, "department");
-        renderChips(TYPES, typeBox, "type");
-
-        const state = getState();
-        if (!localStorage.getItem(STORAGE_KEY) && !state.dismissedAt) {
-            setTimeout(showPopup, 60000);
-            document.querySelectorAll("a.official-button").forEach(link => {
-                link.addEventListener("click", () => {
-                    const current = getState();
-                    current.interactions = (current.interactions || 0) + 1;
-                    setState(current);
-                    if (current.interactions >= 3) showPopup();
-                });
-            });
-        }
-    })();
-
+function toggleMenu(){document.getElementById("main-nav").classList.toggle("open");}
+(function(){
+ const KEY="mahaupdate_preferences_v1", DISMISS="mahaupdate_preferences_dismissed_v1";
+ const overlay=document.getElementById("personalizationOverlay"), srcBox=document.getElementById("sourcePreferences"), typeBox=document.getElementById("typePreferences");
+ const cards=()=>Array.from(document.querySelectorAll(".update-card"));
+ const sources=[...new Set(cards().map(c=>c.dataset.source).filter(Boolean))].sort();
+ const types=[...new Set(cards().map(c=>c.dataset.type).filter(Boolean))].sort();
+ function load(){try{return JSON.parse(localStorage.getItem(KEY))||{sources:[],types:[]};}catch(e){return {sources:[],types:[]};}}
+ function chip(value,box,selected){const b=document.createElement("button");b.type="button";b.className="pref-option"+(selected.includes(value)?" selected":"");b.textContent=value;b.dataset.value=value;b.onclick=()=>b.classList.toggle("selected");box.appendChild(b);}
+ function render(){const p=load();srcBox.innerHTML="";typeBox.innerHTML="";sources.forEach(v=>chip(v,srcBox,p.sources||[]));types.forEach(v=>chip(v,typeBox,p.types||[]));}
+ function openPrefs(){render();overlay.classList.add("show");overlay.setAttribute("aria-hidden","false");}
+ function closePrefs(){overlay.classList.remove("show");overlay.setAttribute("aria-hidden","true");}
+ function getSelected(box){return Array.from(box.querySelectorAll(".pref-option.selected")).map(x=>x.dataset.value);}
+ function applyForYou(){const p=load(), list=document.querySelector(".updates"), note=document.getElementById("personalizedModeNote");if(!list)return false;if(!(p.sources||[]).length && !(p.types||[]).length){openPrefs();return false;}const ordered=cards().map((c,i)=>({c,i,score:((p.sources||[]).includes(c.dataset.source)?2:0)+((p.types||[]).includes(c.dataset.type)?1:0)})).sort((a,b)=>b.score-a.score||a.i-b.i);ordered.forEach(x=>list.appendChild(x.c));if(note)note.classList.add("show");return true;}
+ document.getElementById("savePreferencesButton").onclick=()=>{localStorage.setItem(KEY,JSON.stringify({sources:getSelected(srcBox),types:getSelected(typeBox)}));localStorage.removeItem(DISMISS);closePrefs();applyForYou();};
+ document.getElementById("maybeLaterButton").onclick=()=>{localStorage.setItem(DISMISS,"1");closePrefs();};
+ const edit=document.getElementById("editPreferencesButton");if(edit)edit.onclick=openPrefs;
+ const forYou=document.getElementById("forYouButton");if(forYou)forYou.onclick=applyForYou;
+ let clicks=0, timer=setTimeout(()=>{if(!localStorage.getItem(KEY)&&!localStorage.getItem(DISMISS))openPrefs();},60000);
+ document.addEventListener("click",e=>{if(e.target.closest(".official-button")){clicks++;if(clicks>=3&&!localStorage.getItem(KEY)&&!localStorage.getItem(DISMISS)){clearTimeout(timer);openPrefs();}}});
+ if(localStorage.getItem(KEY)){setTimeout(()=>{if(document.body.dataset.pageType==="home")applyForYou();},0);}
+})();
 </script>
 
 
@@ -2240,13 +2155,13 @@ OFFICIAL_DOMAINS = {
     "MAHAGENCO": ("mahagenco.in",),
     "MJP": ("mjp.maharashtra.gov.in",),
     "PWD": ("mahapwd.gov.in", "cdnbbsr.s3waas.gov.in"),
-    "NHM": ("arogya.maharashtra.gov.in", "nhm.maharashtra.gov.in"),
+    "NHM": ("arogya.maharashtra.gov.in", "nhm.maharashtra.gov.in", "cdnbbsr.s3waas.gov.in"),
     "DMA": ("mahadma.maharashtra.gov.in",),
     "DMER": ("dmer.maharashtra.gov.in",),
     "DFSL": ("dfsl.maharashtra.gov.in",),
     "INDIAN RAILWAYS": ("indianrailways.gov.in", "rrbcdg.gov.in"),
     "MAHARASHTRA POLICE": ("mahapolice.gov.in",),
-    "PUBLIC HEALTH DEPARTMENT": ("arogya.maharashtra.gov.in",),
+    "PUBLIC HEALTH DEPARTMENT": ("arogya.maharashtra.gov.in", "cdnbbsr.s3waas.gov.in"),
     "FOREST": ("mahaforest.gov.in",),
     "WCD": ("womenchild.maharashtra.gov.in",),
     "SAINIK WELFARE": ("mahasainik.maharashtra.gov.in", "maharashtra.gov.in"),
