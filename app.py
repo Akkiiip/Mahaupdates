@@ -40,6 +40,8 @@ PAGE = """
 
     <title>{{ page_title }} | MahaUpdate</title>
 
+    <link rel="icon" type="image/png" href="{{ logo_data_uri }}">
+
     <style>
 
         :root {
@@ -1610,6 +1612,12 @@ const types = {{ types|tojson }};
 </html>
 """
 
+# Reuse the existing header branding for the favicon, avoiding a separate
+# static-file path that could fail in the Render/Linux deployment.
+LOGO_DATA_URI = re.search(
+    r'<img src="(data:image/png;base64,[^"]+)" alt="MahaUpdate logo">', PAGE
+).group(1)
+
 
 # ============================================================
 # HELPERS
@@ -1990,7 +1998,7 @@ def render_page(
             selected_source="" if fixed_source else selected_source,
             update_type=update_type, current_path=request.path,
             pagination_url=pagination_url, format_date=format_date,
-            source_display_name=source_display_name,
+            source_display_name=source_display_name, logo_data_uri=LOGO_DATA_URI,
         )
     except Exception:
         app.logger.exception("MahaUpdate render failure")
@@ -2080,6 +2088,7 @@ def departments_page():
         page_title="All Departments",
         active_page="departments",
         show_updates=False,
+        logo_data_uri=LOGO_DATA_URI,
         show_filters=False,
         updates=[],
         total_updates=0,
